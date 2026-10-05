@@ -1,4 +1,4 @@
-# Madrid Road Safety Analytics
+# Seguridad Vial Madrid
 
 Aplicación interactiva para el análisis de los accidentes de tráfico y la predicción de su gravedad en Madrid.
 
