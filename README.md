@@ -1,4 +1,4 @@
-# Seguridad Vial Madrid
+# Análisis de Accidentes de Tráfico Madrid
 
 Aplicación interactiva para el análisis de los accidentes de tráfico y la predicción de su gravedad en Madrid.
 
