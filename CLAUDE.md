@@ -81,7 +81,7 @@ Columnas: `num_expediente, fecha, hora, localizacion, numero, cod_distrito, dist
 - Los conteos de accidentes se hacen con `num_expediente.nunique()`, nunca con el número de filas. Indicar en cada gráfico si cuenta personas o accidentes.
 
 **Variable objetivo (`grave`):**
-- Sale de `lesividad`. Propuesta de "grave": `Ingreso superior a 24 horas` y `Fallecido 24 horas`. El resto de categorías informadas cuentan como no grave. **Hay que confirmarlo con Pao antes de fijarlo.**
+- Sale de `lesividad`. Propuesta de "grave": `Ingreso superior a 24 horas` y `Fallecido 24 horas`. El resto de categorías informadas cuentan como no grave. **Confirmado por Pao (23/11/2026).** `Se desconoce` (muy pocas filas) se deja fuera, igual que "No informada".
 - `lesividad` vacía (en torno al 45 % de las filas) **no se trata como "sin lesión"**. Se deja fuera del entrenamiento y se muestra como "No informada" en la exploración.
 - **`cod_lesividad` no se usa nunca como predictor** (contiene la misma información que el objetivo).
 - Clases muy desbalanceadas (los graves son pocos), así que la accuracy por sí sola no sirve. Hay que reportar recall y F1 de la clase grave.
