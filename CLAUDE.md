@@ -80,9 +80,10 @@ Columnas: `num_expediente, fecha, hora, localizacion, numero, cod_distrito, dist
 - Cada fila es una persona o vehículo implicado, y un mismo `num_expediente` se repite. Por ejemplo, en 2021 hay 41.783 filas para 17.952 expedientes.
 - Los conteos de accidentes se hacen con `num_expediente.nunique()`, nunca con el número de filas. Indicar en cada gráfico si cuenta personas o accidentes.
 
-**Variable objetivo (`grave`):**
-- Sale de `lesividad`. Propuesta de "grave": `Ingreso superior a 24 horas` y `Fallecido 24 horas`. El resto de categorías informadas cuentan como no grave. **Confirmado por Pao (23/11/2026).** `Se desconoce` (muy pocas filas) se deja fuera, igual que "No informada".
-- `lesividad` vacía (en torno al 45 % de las filas) **no se trata como "sin lesión"**. Se deja fuera del entrenamiento y se muestra como "No informada" en la exploración.
+**Variable objetivo (`grave`) — DECIDIDO:**
+- `grave = 1` si `lesividad` es `Ingreso superior a 24 horas` o `Fallecido 24 horas`. Es el criterio oficial de la DGT (herido grave = hospitalizado más de 24 h, más fallecidos). Citarlo así en la app y en la presentación.
+- `grave = 0` para el resto de categorías informadas (sin asistencia, asistencia en el lugar, ambulatoria, urgencias sin ingreso, ingreso de 24 h o menos).
+- `lesividad` vacía (en torno al 45 % de las filas) o `Se desconoce`: **no se trata como "sin lesión"**. Se deja fuera del entrenamiento y del cálculo de tasas, y se muestra como "No informada" en la exploración.
 - **`cod_lesividad` no se usa nunca como predictor** (contiene la misma información que el objetivo).
 - Clases muy desbalanceadas (los graves son pocos), así que la accuracy por sí sola no sirve. Hay que reportar recall y F1 de la clase grave.
 
