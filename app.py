@@ -4,9 +4,13 @@ Bloque 1 (exploración): filtros y gráficos descriptivos.
 Cada fila de los datos es una persona implicada; un accidente se repite en varias filas.
 """
 
-from dash import Dash, Input, Output, dcc, html
+from pathlib import Path
+
+import joblib
+from dash import Dash, Input, Output, State, dcc, html
 
 from src.etl import cargar_datos
+from src.model import VARIABLES, probabilidad_persona
 from src.graphics import (
     DIAS,
     MESES,
@@ -14,6 +18,7 @@ from src.graphics import (
     accidentes_por_dia_semana,
     accidentes_por_hora,
     accidentes_por_mes,
+    grafico_probabilidad,
     mapa_calor_dia_hora,
     personas_por_categoria,
     tasa_gravedad,
@@ -114,6 +119,59 @@ for etiqueta in FACTORES:
 
 opciones_anio_gravedad = crear_opciones("anio")
 
+
+# --- Predicción -------------------------------------------------------------
+# El modelo se entrena en train.py; aquí SOLO se carga (nunca se hace fit en la app)
+paquete = joblib.load(Path(__file__).resolve().parent / "model.joblib")
+modelo = paquete["modelo"]
+codigos = paquete["codigos"]
+
+# % medio de personas graves entre las de lesividad informada (referencia del gráfico)
+media_graves = datos["grave"].mean() * 100
+
+
+def valor_mas_frecuente(columna):
+    """Valor más habitual de una columna que no sea 'Desconocido' ni 'No informado'."""
+    for valor in datos[columna].value_counts().index:
+        if valor not in ("Desconocido", "No informado"):
+            return valor
+
+
+# Campos del formulario: variable -> (etiqueta, opciones)
+# Las numéricas muestran un texto (p. ej. 0 -> "Lunes"); las de texto, sus valores.
+CAMPOS = {
+    "hora_num": ("Hora", [{"label": f"{h}:00", "value": h} for h in range(24)]),
+    "dia_semana": ("Día de la semana", [{"label": DIAS[d], "value": d} for d in DIAS]),
+    "mes": ("Mes", [{"label": MESES[m], "value": m} for m in MESES]),
+    "distrito": ("Distrito", None),
+    "tipo_accidente": ("Tipo de accidente", None),
+    "estado_meteorologico": ("Meteorología", None),
+    "tipo_vehiculo": ("Tipo de vehículo implicado", None),
+    "tipo_persona": ("Tipo de persona", None),
+    "rango_edad": ("Rango de edad", None),
+    "sexo": ("Sexo", None),
+    "positiva_alcohol": ("Positivo en alcohol (S/N)", None),
+}
+
+controles_prediccion = []
+for variable in VARIABLES:
+    etiqueta, opciones = CAMPOS[variable]
+    if opciones is None:
+        opciones = [{"label": v, "value": v} for v in sorted(codigos[variable])]
+    controles_prediccion.append(
+        html.Div(
+            children=[
+                html.P(etiqueta, style={"margin": "0", "font-weight": "bold"}),
+                dcc.Dropdown(
+                    options=opciones,
+                    value=valor_mas_frecuente(variable),
+                    id="p_" + variable,
+                ),
+            ],
+            style={"width": "220px", "display": "inline-block", "margin": "5px 10px"},
+        )
+    )
+
 app = Dash(__name__)
 server = app.server  # obligatorio para gunicorn (Render)
 
@@ -169,6 +227,25 @@ app.layout = html.Div(
             style={"width": "200px", "display": "inline-block", "margin": "5px 10px"},
         ),
         dcc.Graph(id="g_gravedad"),
+        html.H2("Predicción de la gravedad", style={"margin": "30px 20px 0"}),
+        html.P(
+            "Describe a una persona implicada en un accidente que YA ha ocurrido y el modelo "
+            "estima la probabilidad de que sufra una lesión grave. No predice si va a "
+            "ocurrir un accidente. En un atropello, el tipo de vehículo es el que atropelló.",
+            style={"margin": "10px 20px"},
+        ),
+        html.P(
+            "Es una estimación orientativa: el modelo ordena bien el riesgo (la gravedad es "
+            "poco frecuente, un 2,2 %) pero no es preciso para un caso individual.",
+            style={"margin": "10px 20px", "color": "gray"},
+        ),
+        html.Div(children=controles_prediccion, style={"margin": "0 10px"}),
+        html.Button(
+            "Calcular probabilidad", id="p_boton", n_clicks=0,
+            style={"margin": "10px 20px", "padding": "8px 16px"},
+        ),
+        html.H3(id="p_resultado", style={"margin": "10px 20px"}),
+        dcc.Graph(id="p_grafico"),
     ]
 )
 
@@ -248,6 +325,27 @@ def actualizar_gravedad(factor, anio):
         filtrados, columna, f"Gravedad según: {factor} ({sufijo})", factor,
         nombres=nombres, ordenar_por_tasa=ordenar_por_tasa,
     )
+
+
+@app.callback(
+    Output("p_resultado", "children"),
+    Output("p_grafico", "figure"),
+    Input("p_boton", "n_clicks"),
+    *[State("p_" + variable, "value") for variable in VARIABLES],
+)
+def predecir(n_clicks, *valores):
+    """Calcula la probabilidad de lesión grave de la persona descrita en el formulario."""
+    caracteristicas = dict(zip(VARIABLES, valores))
+    if None in valores:
+        return "Completa todos los campos para calcular la probabilidad.", grafico_probabilidad(0, media_graves)
+
+    probabilidad = probabilidad_persona(modelo, codigos, caracteristicas) * 100
+    veces = probabilidad / media_graves
+    texto = (
+        f"Probabilidad estimada de lesión grave: {probabilidad:.1f} % "
+        f"({veces:.1f} veces la media, que es {media_graves:.1f} %)"
+    )
+    return texto, grafico_probabilidad(probabilidad, media_graves)
 
 
 if __name__ == "__main__":
