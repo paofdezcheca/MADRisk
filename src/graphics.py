@@ -2,6 +2,12 @@
 
 Cada función recibe un DataFrame y devuelve una figura de Plotly (go.Figure).
 Este fichero no sabe nada de Dash: así se puede probar y reutilizar por separado.
+
+Regla importante: cada fila del DataFrame es una PERSONA implicada, y un accidente
+(num_expediente) se repite en varias filas. Por eso:
+  - los gráficos "de accidentes" se quedan antes con una fila por accidente;
+  - los gráficos "de personas" cuentan filas.
+Cada título indica qué se está contando.
 """
 
 from __future__ import annotations
@@ -10,29 +16,153 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Nombre de cada mes para el eje X
+# Nombre de cada mes y de cada día de la semana (0 = lunes) para los ejes
 MESES = {
     1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
     7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic",
 }
+DIAS = {
+    0: "Lunes", 1: "Martes", 2: "Miércoles", 3: "Jueves",
+    4: "Viernes", 5: "Sábado", 6: "Domingo",
+}
+
+
+def figura_vacia(titulo: str) -> go.Figure:
+    """Figura con un mensaje, para cuando los filtros no dejan ningún dato."""
+    fig = go.Figure()
+    fig.update_layout(
+        title=titulo,
+        template="plotly_white",
+        annotations=[{
+            "text": "Sin datos con estos filtros",
+            "showarrow": False,
+            "font": {"size": 16},
+        }],
+    )
+    return fig
+
+
+def un_registro_por_accidente(df: pd.DataFrame) -> pd.DataFrame:
+    """Deja una fila por accidente (num_expediente) para poder contar accidentes."""
+    return df.drop_duplicates(subset="num_expediente")
 
 
 def accidentes_por_mes(df: pd.DataFrame, titulo: str) -> go.Figure:
-    """Barras con el número de ACCIDENTES (no de personas) que hay en cada mes."""
-    # Cada fila es una persona implicada y un accidente (num_expediente) se repite
-    # en varias filas. Nos quedamos con una fila por accidente antes de contar.
-    accidentes = df.drop_duplicates(subset="num_expediente")
+    """Barras con el número de ACCIDENTES que hay en cada mes."""
+    if len(df) == 0:
+        return figura_vacia(titulo)
+    accidentes = un_registro_por_accidente(df)
 
-    # Contamos accidentes por mes
     conteo = accidentes.groupby("mes").size().reset_index(name="accidentes")
     conteo["mes_nombre"] = conteo["mes"].map(MESES)
 
     fig = px.bar(
-        conteo,
-        x="mes_nombre",
-        y="accidentes",
-        title=titulo,
+        conteo, x="mes_nombre", y="accidentes", title=titulo,
         labels={"mes_nombre": "Mes", "accidentes": "Número de accidentes"},
     )
     fig.update_layout(template="plotly_white")
+    return fig
+
+
+def accidentes_por_dia_semana(df: pd.DataFrame, titulo: str) -> go.Figure:
+    """Barras con el número de ACCIDENTES por día de la semana."""
+    if len(df) == 0:
+        return figura_vacia(titulo)
+    accidentes = un_registro_por_accidente(df)
+
+    conteo = accidentes.groupby("dia_semana").size().reset_index(name="accidentes")
+    conteo["dia_nombre"] = conteo["dia_semana"].map(DIAS)
+
+    fig = px.bar(
+        conteo, x="dia_nombre", y="accidentes", title=titulo,
+        labels={"dia_nombre": "Día de la semana", "accidentes": "Número de accidentes"},
+    )
+    fig.update_layout(template="plotly_white")
+    return fig
+
+
+def accidentes_por_hora(df: pd.DataFrame, titulo: str) -> go.Figure:
+    """Línea con el número de ACCIDENTES por hora del día (0-23)."""
+    if len(df) == 0:
+        return figura_vacia(titulo)
+    accidentes = un_registro_por_accidente(df)
+
+    conteo = accidentes.groupby("hora_num").size().reset_index(name="accidentes")
+
+    fig = px.line(
+        conteo, x="hora_num", y="accidentes", markers=True, title=titulo,
+        labels={"hora_num": "Hora del día", "accidentes": "Número de accidentes"},
+    )
+    fig.update_layout(template="plotly_white")
+    return fig
+
+
+def accidentes_por_categoria(
+    df: pd.DataFrame, columna: str, titulo: str, etiqueta: str, maximo: int = 0
+) -> go.Figure:
+    """Barras horizontales con el número de ACCIDENTES de cada valor de `columna`.
+
+    `maximo`: si es mayor que 0, solo se dibujan las `maximo` categorías más frecuentes.
+    """
+    if len(df) == 0:
+        return figura_vacia(titulo)
+    accidentes = un_registro_por_accidente(df)
+    return _barras_horizontales(accidentes, columna, titulo, etiqueta,
+                                "Número de accidentes", maximo)
+
+
+def personas_por_categoria(
+    df: pd.DataFrame, columna: str, titulo: str, etiqueta: str, maximo: int = 0
+) -> go.Figure:
+    """Barras horizontales con el número de PERSONAS (filas) de cada valor de `columna`."""
+    if len(df) == 0:
+        return figura_vacia(titulo)
+    return _barras_horizontales(df, columna, titulo, etiqueta,
+                                "Número de personas", maximo)
+
+
+def _barras_horizontales(
+    df: pd.DataFrame, columna: str, titulo: str, etiqueta: str, eje_x: str, maximo: int
+) -> go.Figure:
+    """Cuenta filas por categoría y dibuja las barras de mayor a menor (arriba la mayor)."""
+    conteo = df.groupby(columna).size().reset_index(name="total")
+    conteo = conteo.sort_values("total", ascending=False)
+    if maximo > 0:
+        conteo = conteo.head(maximo)
+    # En un gráfico horizontal la primera barra se dibuja abajo: invertimos el orden
+    conteo = conteo.sort_values("total", ascending=True)
+
+    fig = px.bar(
+        conteo, x="total", y=columna, orientation="h", title=titulo,
+        labels={"total": eje_x, columna: etiqueta},
+    )
+    fig.update_layout(template="plotly_white")
+    return fig
+
+
+def mapa_calor_dia_hora(df: pd.DataFrame, titulo: str) -> go.Figure:
+    """Heatmap de ACCIDENTES: día de la semana (filas) por hora del día (columnas)."""
+    if len(df) == 0:
+        return figura_vacia(titulo)
+    accidentes = un_registro_por_accidente(df)
+
+    # Tabla con una fila por día y una columna por hora; cada celda cuenta accidentes
+    tabla = accidentes.pivot_table(
+        index="dia_semana", columns="hora_num", values="num_expediente",
+        aggfunc="count", fill_value=0,
+    )
+
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=tabla.values,
+            x=tabla.columns.tolist(),
+            y=[DIAS[d] for d in tabla.index],
+            colorbar={"title": "Accidentes"},
+        )
+    )
+    fig.update_layout(
+        title=titulo, template="plotly_white",
+        xaxis_title="Hora del día", yaxis_title="Día de la semana",
+        yaxis={"autorange": "reversed"},  # lunes arriba
+    )
     return fig
