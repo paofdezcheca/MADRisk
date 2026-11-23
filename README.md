@@ -110,6 +110,17 @@ Después, abre http://127.0.0.1:8050 en el navegador.
 - `train.py`: entrena el modelo y guarda `model.joblib` (`python train.py`).
 - `app.py`: layout y callbacks de Dash; solo carga el modelo, nunca lo entrena.
 - `model.joblib`: Random Forest entrenado (50 árboles, profundidad 8, ~1,4 MB).
+- `assets/carrusel/`: fotos del carrusel de la cabecera.
+
+## Créditos de las fotos
+
+Las fotos del carrusel son del **Diario de Madrid**, publicadas en Wikimedia Commons con licencia [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/):
+
+- [Accidente de moto en la calle Antonio Machado](https://commons.wikimedia.org/wiki/File:Accidente_de_Moto_en_la_calle_Antonio-Machado-29.03.08.jpg)
+- [Intervención del SAMUR en un accidente de tráfico](https://commons.wikimedia.org/wiki/File:Intervenci%C3%B3n_del_SAMUR_en_un_accidente_de_Tr%C3%A1fico.jpg)
+- [Intervención del SAMUR en un accidente de moto en la M30](https://commons.wikimedia.org/wiki/File:Intervenci%C3%B3n_del_SAMUR_en_un_accidente_de_moto_en_la_M30.jpg)
+- [Intervención del SAMUR en un accidente de moto](https://commons.wikimedia.org/wiki/File:Intervenci%C3%B3n_del_SAMUR_en_un_accidente_de_moto.jpg)
+- [Intervención del SAMUR en un atrapado en un accidente de tráfico](https://commons.wikimedia.org/wiki/File:Intervenci%C3%B3n_del_SAMUR_en_un_atrapado_en_una_accidente_de_tr%C3%A1fico.jpg)
 
 ## Tecnologías
 
