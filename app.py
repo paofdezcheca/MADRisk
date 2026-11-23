@@ -283,9 +283,66 @@ for nivel in ["Alta", "Media", "Baja"]:
 app = Dash(__name__)
 server = app.server  # obligatorio para gunicorn (Render)
 
+# --- Carrusel de fotos -------------------------------------------------------
+# Fotos de intervenciones del SAMUR de Madrid en accidentes de tráfico (carpeta assets/,
+# que Dash sirve solo). Autor: Diario de Madrid, licencia CC BY 4.0, vía Wikimedia Commons.
+FOTOS = [f"carrusel/foto{i}.jpg" for i in range(1, 6)]
+SEGUNDOS_POR_FOTO = 5
+ALTO_CARRUSEL = "300px"
+
+# Para que el carrusel avance siempre hacia la derecha y pueda "dar la vuelta" sin que
+# se note, la tira repite la secuencia de fotos varias veces. Solo al final de la tira
+# (cada ~3 minutos) hay un salto sin animación.
+REPETICIONES = 8
+N_FOTOS = len(FOTOS)
+HUECOS = N_FOTOS * REPETICIONES  # número de fotos en la tira
+CICLO = HUECOS - N_FOTOS  # avances antes de volver al principio de la tira
+
+
+def estilo_tira(avance):
+    """Estilo de la tira de fotos tras `avance` avances: la desplaza hacia la derecha."""
+    posicion = avance % CICLO
+    # La foto 0 está en el hueco de más a la derecha; cada avance baja un hueco, es
+    # decir, mueve la tira hacia la derecha.
+    hueco = HUECOS - 1 - posicion
+    # Sin animación solo cuando se vuelve al principio de la tira
+    animacion = "none" if (posicion == 0 and avance > 0) else "transform 1s ease-in-out"
+    return {
+        "display": "flex",
+        "width": f"{HUECOS * 100}%",
+        "height": "100%",
+        "transform": f"translateX(-{hueco * 100 / HUECOS}%)",
+        "transition": animacion,
+    }
+
+
+# En el hueco `h` va la foto (HUECOS - 1 - h) % N_FOTOS: así, al bajar de hueco, la
+# foto que entra por la izquierda es la siguiente de la lista
+fotos_tira = []
+for hueco in range(HUECOS):
+    foto = FOTOS[(HUECOS - 1 - hueco) % N_FOTOS]
+    fotos_tira.append(
+        html.Img(
+            src=app.get_asset_url(foto),
+            alt="Intervención del SAMUR en un accidente de tráfico en Madrid",
+            style={"width": f"{100 / HUECOS}%", "height": "100%", "objectFit": "cover",
+                   "display": "block"},
+        )
+    )
+
+carrusel = html.Div(
+    children=[
+        html.Div(children=fotos_tira, id="carrusel_tira", style=estilo_tira(0)),
+        dcc.Interval(id="carrusel_reloj", interval=SEGUNDOS_POR_FOTO * 1000),
+    ],
+    style={"width": "100%", "height": ALTO_CARRUSEL, "overflow": "hidden",
+           "backgroundColor": "#10253a"},
+)
+
 app.layout = html.Div(
     style=ESTILO_PAGINA,
     children=[
+        carrusel,
         # Cabecera
         html.Div(
             children=[
@@ -434,7 +491,8 @@ app.layout = html.Div(
                 ),
                 html.P(
                     "Datos: Portal de Datos Abiertos del Ayuntamiento de Madrid, "
-                    "accidentes de tráfico 2020-2025.",
+                    "accidentes de tráfico 2020-2025. Fotos: Diario de Madrid "
+                    "(CC BY 4.0), vía Wikimedia Commons.",
                     style={"textAlign": "center", "color": "#6b7280", "fontSize": "13px"},
                 ),
             ],
@@ -492,6 +550,15 @@ def comparar(n_clicks, *valores):
             style=ESTILO_FILA,
         ),
     ]
+
+
+@app.callback(
+    Output("carrusel_tira", "style"),
+    Input("carrusel_reloj", "n_intervals"),
+)
+def avanzar_carrusel(n_intervals):
+    """Cada 5 segundos mueve la tira una foto hacia la derecha."""
+    return estilo_tira(n_intervals or 0)
 
 
 @app.callback(
