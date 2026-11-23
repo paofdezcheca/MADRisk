@@ -140,6 +140,33 @@ def marcar_no_informados(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+# Lesividades que consideramos GRAVES (definición confirmada con Pao)
+LESIVIDADES_GRAVES = ["Ingreso superior a 24 horas", "Fallecido 24 horas"]
+# Lesividades sin información útil: no sabemos si fue grave, así que no cuentan
+LESIVIDADES_SIN_DATO = ["No informada", "Se desconoce"]
+
+
+def valor_grave(lesividad: str) -> float:
+    """1 si la lesión es grave, 0 si no lo es y NaN si no hay información."""
+    if lesividad in LESIVIDADES_SIN_DATO:
+        return np.nan
+    if lesividad in LESIVIDADES_GRAVES:
+        return 1.0
+    return 0.0
+
+
+def marcar_grave(df: pd.DataFrame) -> pd.DataFrame:
+    """Añade la columna `grave` (1 / 0 / NaN) a partir de `lesividad`.
+
+    Los NaN NO se tratan como "no grave": quedan fuera de los porcentajes
+    y del entrenamiento del modelo. Cada fila es una persona, así que `grave`
+    indica si LA PERSONA tuvo una lesión grave.
+    """
+    out = df.copy()
+    out["grave"] = out["lesividad"].map(valor_grave)
+    return out
+
+
 def cargar_datos() -> pd.DataFrame:
     """Carga 2020-2025, valida cada año y devuelve un único DataFrame (una fila = una persona)."""
     print("Cargando años completos:")
@@ -154,6 +181,14 @@ def cargar_datos() -> pd.DataFrame:
     # textos y listas). Es la forma estándar de unir los años en una tabla.
     datos = pd.concat(partes, ignore_index=True)
     datos = marcar_no_informados(datos)
+    datos = marcar_grave(datos)
+    informados = int(datos["grave"].notna().sum())
+    graves = int(datos["grave"].sum())
+    print(
+        f"Lesividad informada en {informados} filas "
+        f"({len(datos) - informados} sin dato); graves: {graves} "
+        f"({100 * graves / informados:.1f} % de las informadas)"
+    )
     print(f"Total: {len(datos)} filas (personas/vehículos implicados)")
     return datos
 
