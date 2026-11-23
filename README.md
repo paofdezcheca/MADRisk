@@ -2,6 +2,8 @@
 
 ### Análisis interactivo y predicción de la gravedad de los accidentes de tráfico en Madrid
 
+**App desplegada:** https://madrisk.onrender.com/
+
 ## Descripción
 
 **MADRisk** es una aplicación interactiva para el análisis de los accidentes de tráfico registrados en la ciudad de Madrid.
@@ -79,6 +81,24 @@ Creación de mapas y visualizaciones interactivas mediante Plotly y desarrollo d
 
 ### Fase 5 — Despliegue y mejora
 Despliegue de la aplicación en una URL pública, pruebas de funcionamiento y mejora progresiva de la interfaz y las funcionalidades.
+
+## Cómo ejecutarlo en local
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate        # en Linux/Mac: source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+
+Después, abre http://127.0.0.1:8050 en el navegador.
+
+## Estructura del proyecto
+
+- `data/raw/`: CSV anuales 2020-2025 del Ayuntamiento de Madrid.
+- `src/etl.py`: carga, limpieza y variables derivadas.
+- `src/graphics.py`: funciones que reciben datos y devuelven figuras de Plotly.
+- `app.py`: layout y callbacks de Dash.
 
 ## Tecnologías
 
