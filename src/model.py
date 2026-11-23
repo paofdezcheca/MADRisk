@@ -16,12 +16,14 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 
-# Variables que conocemos cuando el accidente ya ha ocurrido.
+# Variables que se conocen cuando entra el aviso de un accidente ya ocurrido.
 # NO se usa `lesividad` ni `cod_lesividad`: contienen la misma información que el objetivo.
-VARIABLES_NUMERICAS = ["hora_num", "dia_semana", "mes"]
+# Se descartaron `sexo` y `positiva_alcohol` (no se saben al recibir el aviso) y `mes`
+# (sin sentido como señal de gravedad): comprobamos que el modelo rinde igual sin ellas.
+VARIABLES_NUMERICAS = ["hora_num", "dia_semana"]
 VARIABLES_TEXTO = [
     "distrito", "tipo_accidente", "estado_meteorologico", "tipo_vehiculo",
-    "tipo_persona", "rango_edad", "sexo", "positiva_alcohol",
+    "tipo_persona", "rango_edad",
 ]
 VARIABLES = VARIABLES_NUMERICAS + VARIABLES_TEXTO
 
@@ -141,3 +143,38 @@ def probabilidad_persona(modelo, codigos: dict, caracteristicas: dict) -> float:
     fila = pd.DataFrame([caracteristicas])
     X = codificar(fila, codigos)
     return probabilidad_grave(modelo, X)
+
+
+# Niveles de prioridad según la probabilidad estimada de lesión grave.
+# 0,08 es el umbral con mejor F1 en los datos de prueba (ver evaluar_umbrales).
+UMBRAL_ALTA = 0.08
+UMBRAL_MEDIA = 0.03
+
+
+def nivel_prioridad(probabilidad: float) -> str:
+    """Convierte una probabilidad (0-1) en un nivel de prioridad: Alta, Media o Baja."""
+    if probabilidad >= UMBRAL_ALTA:
+        return "Alta"
+    if probabilidad >= UMBRAL_MEDIA:
+        return "Media"
+    return "Baja"
+
+
+def evaluar_niveles(modelo, X_test, y_test) -> dict:
+    """% de personas con lesión grave dentro de cada nivel, con los datos de prueba.
+
+    Sirve para decirle al usuario qué significa cada nivel con datos reales.
+    Devuelve {nivel: {"personas": n, "tasa_grave": %}}.
+    """
+    probabilidades = modelo.predict_proba(X_test)[:, 1]
+    niveles = pd.Series(probabilidades).map(nivel_prioridad)
+    resultado = {}
+    print("Gravedad real dentro de cada nivel de prioridad (datos de prueba):")
+    for nivel in ["Alta", "Media", "Baja"]:
+        dentro = (niveles == nivel).to_numpy()
+        n = int(dentro.sum())
+        tasa = 100 * float(y_test.to_numpy()[dentro].mean()) if n > 0 else 0.0
+        resultado[nivel] = {"personas": n, "tasa_grave": tasa}
+        print(f"  {nivel}: {n} personas, {tasa:.1f} % con lesión grave")
+    print()
+    return resultado
