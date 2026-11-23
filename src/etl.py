@@ -123,7 +123,7 @@ def validar_anio(df: pd.DataFrame, anio: int) -> pd.DataFrame:
 # Columnas de texto en las que un nulo se muestra como "No informado"
 COLUMNAS_TEXTO = [
     "distrito", "tipo_accidente", "estado_meteorologico",
-    "tipo_vehiculo", "tipo_persona",
+    "tipo_vehiculo", "tipo_persona", "positiva_alcohol",
 ]
 
 
