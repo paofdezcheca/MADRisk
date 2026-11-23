@@ -120,6 +120,26 @@ def validar_anio(df: pd.DataFrame, anio: int) -> pd.DataFrame:
     return df[validas].copy()
 
 
+# Columnas de texto en las que un nulo se muestra como "No informado"
+COLUMNAS_TEXTO = [
+    "distrito", "tipo_accidente", "estado_meteorologico",
+    "tipo_vehiculo", "tipo_persona",
+]
+
+
+def marcar_no_informados(df: pd.DataFrame) -> pd.DataFrame:
+    """Sustituye los nulos de las columnas de texto por una etiqueta legible.
+
+    Importante: una lesividad vacía NO significa "sin lesión". Se muestra como
+    "No informada" y más adelante se deja fuera del entrenamiento del modelo.
+    """
+    out = df.copy()
+    for columna in COLUMNAS_TEXTO:
+        out[columna] = out[columna].map(lambda v: "No informado" if pd.isna(v) else v)
+    out["lesividad"] = out["lesividad"].map(lambda v: "No informada" if pd.isna(v) else v)
+    return out
+
+
 def cargar_datos() -> pd.DataFrame:
     """Carga 2020-2025, valida cada año y devuelve un único DataFrame (una fila = una persona)."""
     print("Cargando años completos:")
@@ -133,6 +153,7 @@ def cargar_datos() -> pd.DataFrame:
     # OJO: pd.concat NO aparece en el material del curso (solo se concatenan
     # textos y listas). Es la forma estándar de unir los años en una tabla.
     datos = pd.concat(partes, ignore_index=True)
+    datos = marcar_no_informados(datos)
     print(f"Total: {len(datos)} filas (personas/vehículos implicados)")
     return datos
 
