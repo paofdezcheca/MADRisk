@@ -27,8 +27,37 @@ DIAS = {
 }
 
 
-# Color principal de los gráficos (el mismo azul que la cabecera de la web)
+# Paleta: azules (la cabecera de la web) y los amarillos, naranjas y rojos de los
+# chalecos y vehículos del SAMUR de las fotos del carrusel.
 COLOR = "#1f4e79"
+AZUL_CLARO = "#9dc3e6"
+AZUL_OSCURO = "#12355b"
+AMARILLO = "#f2b705"
+NARANJA = "#e8710a"
+ROJO = "#b03a2e"
+ESCALA_AZULES = [AZUL_CLARO, COLOR, AZUL_OSCURO]  # de menos a más
+ESCALA_CALIDA = [AMARILLO, NARANJA, ROJO]  # de menos grave a más grave
+
+
+def mezclar(color_a: str, color_b: str, t: float) -> str:
+    """Color intermedio entre dos colores hexadecimales (t = 0 -> a, t = 1 -> b)."""
+    a = [int(color_a[i:i + 2], 16) for i in (1, 3, 5)]
+    b = [int(color_b[i:i + 2], 16) for i in (1, 3, 5)]
+    mezcla = [round(x + (y - x) * t) for x, y in zip(a, b)]
+    return "#" + "".join(f"{c:02x}" for c in mezcla)
+
+
+def colores_por_valor(valores: list, escala: list) -> list:
+    """Un color por valor: el más bajo usa el primer color de la escala y el más alto el último."""
+    minimo, maximo = min(valores), max(valores)
+    colores = []
+    for valor in valores:
+        t = 0.5 if maximo == minimo else (valor - minimo) / (maximo - minimo)
+        # Con 3 colores, el primer tramo va del 1.º al 2.º y el segundo del 2.º al 3.º
+        tramo = min(int(t * (len(escala) - 1)), len(escala) - 2)
+        t_tramo = t * (len(escala) - 1) - tramo
+        colores.append(mezclar(escala[tramo], escala[tramo + 1], t_tramo))
+    return colores
 
 
 def estilo(fig: go.Figure) -> go.Figure:
@@ -74,7 +103,7 @@ def accidentes_por_mes(df: pd.DataFrame, titulo: str) -> go.Figure:
         conteo, x="mes_nombre", y="accidentes", title=titulo,
         labels={"mes_nombre": "Mes", "accidentes": "Número de accidentes"},
     )
-    fig.update_traces(marker_color=COLOR)
+    fig.update_traces(marker_color=colores_por_valor(conteo["accidentes"].tolist(), ESCALA_AZULES))
     return estilo(fig)
 
 
@@ -91,7 +120,7 @@ def accidentes_por_dia_semana(df: pd.DataFrame, titulo: str) -> go.Figure:
         conteo, x="dia_nombre", y="accidentes", title=titulo,
         labels={"dia_nombre": "Día de la semana", "accidentes": "Número de accidentes"},
     )
-    fig.update_traces(marker_color=COLOR)
+    fig.update_traces(marker_color=colores_por_valor(conteo["accidentes"].tolist(), ESCALA_AZULES))
     return estilo(fig)
 
 
@@ -107,7 +136,10 @@ def accidentes_por_hora(df: pd.DataFrame, titulo: str) -> go.Figure:
         conteo, x="hora_num", y="accidentes", markers=True, title=titulo,
         labels={"hora_num": "Hora del día", "accidentes": "Número de accidentes"},
     )
-    fig.update_traces(marker_color=COLOR, line_color=COLOR)
+    fig.update_traces(
+        line_color=COLOR,
+        marker={"color": AMARILLO, "size": 10, "line": {"color": COLOR, "width": 1.5}},
+    )
     return estilo(fig)
 
 
@@ -150,7 +182,7 @@ def _barras_horizontales(
         conteo, x="total", y=columna, orientation="h", title=titulo,
         labels={"total": eje_x, columna: etiqueta},
     )
-    fig.update_traces(marker_color=COLOR)
+    fig.update_traces(marker_color=colores_por_valor(conteo["total"].tolist(), ESCALA_AZULES))
     return estilo(fig)
 
 
@@ -171,7 +203,7 @@ def mapa_calor_dia_hora(df: pd.DataFrame, titulo: str) -> go.Figure:
             z=tabla.values,
             x=tabla.columns.tolist(),
             y=[DIAS[d] for d in tabla.index],
-            colorscale="Blues",
+            colorscale=[[0, "#fff6d9"], [0.4, AMARILLO], [0.75, NARANJA], [1, "#8c2f23"]],
             colorbar={"title": "Accidentes"},
         )
     )
@@ -222,7 +254,7 @@ def tasa_gravedad(
 
     # Tasa media de los datos mostrados, como referencia en el título
     media = informados["grave"].mean() * 100
-    titulo_completo = f"{titulo} · media {media:.1f} %"
+    titulo_completo = f"{titulo} · media {media:.1f}".replace(".", ",") + " %"
     etiquetas = {"tasa": "% de personas con lesión grave", "categoria": etiqueta,
                  "personas": "Personas (lesividad informada)", "graves": "Personas graves"}
 
@@ -237,6 +269,6 @@ def tasa_gravedad(
             tabla, x="categoria", y="tasa", title=titulo_completo,
             labels=etiquetas, hover_data=["personas", "graves"],
         )
-    fig.update_traces(marker_color=COLOR)
+    fig.update_traces(marker_color=colores_por_valor(tabla["tasa"].tolist(), ESCALA_CALIDA))
     return estilo(fig)
 
