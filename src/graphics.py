@@ -166,3 +166,61 @@ def mapa_calor_dia_hora(df: pd.DataFrame, titulo: str) -> go.Figure:
         yaxis={"autorange": "reversed"},  # lunes arriba
     )
     return fig
+
+
+def tasa_gravedad(
+    df: pd.DataFrame,
+    columna: str,
+    titulo: str,
+    etiqueta: str,
+    nombres: dict | None = None,
+    ordenar_por_tasa: bool = True,
+    minimo: int = 100,
+) -> go.Figure:
+    """Porcentaje de PERSONAS con lesión grave según los valores de `columna`.
+
+    Solo cuentan las personas con lesividad informada (grave = 0 o 1); las que no
+    tienen dato quedan fuera porque no sabemos si fue grave.
+    `nombres`: texto a mostrar para cada valor (p. ej. 0 -> "Lunes").
+    `ordenar_por_tasa`: True dibuja barras horizontales de mayor a menor tasa;
+    False mantiene el orden natural de la columna (horas, días, meses...).
+    `minimo`: se ocultan las categorías con menos personas que este número,
+    porque un porcentaje calculado con muy pocas personas no es fiable.
+    """
+    informados = df[df["grave"].notna()]
+    if len(informados) == 0:
+        return figura_vacia(titulo)
+
+    # Por cada valor: personas con lesividad informada y cuántas fueron graves
+    tabla = informados.groupby(columna)["grave"].agg(["count", "sum"]).reset_index()
+    tabla.columns = [columna, "personas", "graves"]
+    tabla = tabla[tabla["personas"] >= minimo].copy()
+    if len(tabla) == 0:
+        return figura_vacia(titulo)
+    tabla["tasa"] = tabla["graves"] / tabla["personas"] * 100
+
+    # Texto del eje: el nombre si lo tenemos, y si no el propio valor
+    if nombres:
+        tabla["categoria"] = tabla[columna].map(nombres)
+    else:
+        tabla["categoria"] = tabla[columna].astype(str)
+
+    # Tasa media de los datos mostrados, como referencia en el título
+    media = informados["grave"].mean() * 100
+    titulo_completo = f"{titulo} · media {media:.1f} %"
+    etiquetas = {"tasa": "% de personas con lesión grave", "categoria": etiqueta,
+                 "personas": "Personas (lesividad informada)", "graves": "Personas graves"}
+
+    if ordenar_por_tasa:
+        tabla = tabla.sort_values("tasa", ascending=True)  # la mayor queda arriba
+        fig = px.bar(
+            tabla, x="tasa", y="categoria", orientation="h", title=titulo_completo,
+            labels=etiquetas, hover_data=["personas", "graves"],
+        )
+    else:
+        fig = px.bar(
+            tabla, x="categoria", y="tasa", title=titulo_completo,
+            labels=etiquetas, hover_data=["personas", "graves"],
+        )
+    fig.update_layout(template="plotly_white")
+    return fig
