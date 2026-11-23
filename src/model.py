@@ -129,3 +129,15 @@ def evaluar_umbrales(modelo, X_test, y_test, umbrales) -> None:
             f"| F1 {f1:.2f} | personas marcadas como graves: {int(marcados.sum())}"
         )
     print()
+
+
+def probabilidad_persona(modelo, codigos: dict, caracteristicas: dict) -> float:
+    """Probabilidad de lesión grave para UNA persona descrita en `caracteristicas`.
+
+    `caracteristicas` es un diccionario {variable: valor} con todas las de VARIABLES
+    (los textos tal y como aparecen en los datos). Se codifica con los mismos
+    diccionarios que en el entrenamiento y se pide la probabilidad al modelo.
+    """
+    fila = pd.DataFrame([caracteristicas])
+    X = codificar(fila, codigos)
+    return probabilidad_grave(modelo, X)
