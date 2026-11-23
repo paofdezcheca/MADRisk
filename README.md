@@ -44,7 +44,7 @@ Se analizarán factores como el momento y la localización del accidente, el tip
 
 ### 3. Predicción de la gravedad
 
-Un modelo de clasificación supervisada (Random Forest) estima la probabilidad de que una persona implicada en un accidente sufra una lesión grave, a partir de sus características (hora, día, distrito, tipo de accidente, vehículo, edad, etc.).
+La web está pensada como ayuda para los servicios de emergencia: **compara dos avisos de accidente y propone atender primero el de mayor probabilidad de lesión grave**. Un modelo de clasificación supervisada (Random Forest) estima esa probabilidad para una persona implicada en un accidente que ya ha ocurrido, usando solo datos que se conocen al recibir el aviso: tipo de persona, vehículo, tipo de accidente, edad, distrito, hora, día y meteorología. Según la probabilidad se asigna una prioridad alta (≥ 8 %), media (3-8 %) o baja (< 3 %). En los datos de prueba, el 16,1 % de las personas con prioridad alta sufrió una lesión grave, frente al 5,6 % en la media y el 0,5 % en la baja.
 
 El objetivo no es predecir la probabilidad de que ocurra un accidente, sino estimar su gravedad **una vez ocurrido**.
 
@@ -52,7 +52,7 @@ Resultados (sobre el 30 % de datos de prueba):
 
 - Solo el 2,2 % de las personas con lesividad informada tiene una lesión grave, así que la *accuracy* no es una buena medida (decir siempre "no grave" acierta el 97,8 %).
 - Con el umbral habitual de 0,5 el modelo no detecta ningún grave. Por eso la app muestra la **probabilidad** y la compara con la media (2,2 %), en lugar de dar un sí o un no.
-- El modelo ordena bien el riesgo: el 10 % de personas con mayor probabilidad contiene un 12,5 % de graves frente al 2,2 % de base. Con un umbral de 0,08 el F1 de la clase grave es 0,22 (recall 0,33, precisión 0,16). Es una estimación orientativa, no precisa para un caso individual.
+- El modelo ordena bien el riesgo: el 10 % de personas con mayor probabilidad contiene un 12,3 % de graves frente al 2,2 % de base. Con un umbral de 0,08 el F1 de la clase grave es 0,22 (recall 0,33, precisión 0,16). Es una estimación orientativa, no precisa para un caso individual.
 
 ## Fuente de datos
 
