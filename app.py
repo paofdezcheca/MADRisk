@@ -16,6 +16,7 @@ from src.graphics import (
     accidentes_por_mes,
     mapa_calor_dia_hora,
     personas_por_categoria,
+    tasa_gravedad,
 )
 
 # Los datos se cargan UNA sola vez al arrancar la app, no en cada callback
@@ -89,6 +90,30 @@ for id_filtro, columna, etiqueta, nombres in FILTROS:
         )
     )
 
+
+# Factores para el análisis de gravedad:
+# etiqueta -> (columna, nombres de los valores, ordenar por tasa)
+# Si ordenar por tasa es False, se mantiene el orden natural (horas, días, meses...)
+FACTORES = {
+    "Hora del día": ("hora_num", {h: f"{h}:00" for h in range(24)}, False),
+    "Franja horaria": ("franja", None, True),
+    "Día de la semana": ("dia_semana", DIAS, False),
+    "Mes": ("mes", MESES, False),
+    "Distrito": ("distrito", None, True),
+    "Tipo de accidente": ("tipo_accidente", None, True),
+    "Tipo de vehículo": ("tipo_vehiculo", None, True),
+    "Tipo de persona": ("tipo_persona", None, True),
+    "Rango de edad": ("rango_edad", None, True),
+    "Sexo": ("sexo", None, True),
+    "Meteorología": ("estado_meteorologico", None, True),
+    "Alcohol positivo": ("positiva_alcohol", None, True),
+}
+opciones_factor = []
+for etiqueta in FACTORES:
+    opciones_factor.append({"label": etiqueta, "value": etiqueta})
+
+opciones_anio_gravedad = crear_opciones("anio")
+
 app = Dash(__name__)
 server = app.server  # obligatorio para gunicorn (Render)
 
@@ -121,6 +146,29 @@ app.layout = html.Div(
         caja_grafico("g_meteo"),
         caja_grafico("g_vehiculo"),
         caja_grafico("g_lesividad", ancho="98%"),
+        html.H2("Análisis de la gravedad", style={"margin": "30px 20px 0"}),
+        html.P(
+            "Gravedad = persona con lesión grave (ingreso de más de 24 horas o fallecida). "
+            "El porcentaje se calcula solo con las personas cuya lesividad está informada. "
+            "Pasa el ratón por una barra para ver cuántas personas hay detrás. "
+            "Se ocultan los grupos con menos de 100 personas.",
+            style={"margin": "10px 20px"},
+        ),
+        html.Div(
+            children=[
+                html.P("Factor", style={"margin": "0", "font-weight": "bold"}),
+                dcc.Dropdown(options=opciones_factor, value="Hora del día", id="g_factor"),
+            ],
+            style={"width": "260px", "display": "inline-block", "margin": "5px 10px"},
+        ),
+        html.Div(
+            children=[
+                html.P("Año", style={"margin": "0", "font-weight": "bold"}),
+                dcc.Dropdown(options=opciones_anio_gravedad, value=TODOS, id="g_anio"),
+            ],
+            style={"width": "200px", "display": "inline-block", "margin": "5px 10px"},
+        ),
+        dcc.Graph(id="g_gravedad"),
     ]
 )
 
@@ -179,6 +227,26 @@ def actualizar(*valores):
         personas_por_categoria(
             filtrados, "lesividad", "Personas por lesividad", "Lesividad"
         ),
+    )
+
+
+@app.callback(
+    Output("g_gravedad", "figure"),
+    Input("g_factor", "value"),
+    Input("g_anio", "value"),
+)
+def actualizar_gravedad(factor, anio):
+    """Dibuja el % de personas con lesión grave según el factor y el año elegidos."""
+    columna, nombres, ordenar_por_tasa = FACTORES[factor]
+    if anio is None or anio == TODOS:
+        filtrados = datos
+        sufijo = "2020-2025"
+    else:
+        filtrados = datos[datos["anio"] == anio]
+        sufijo = str(anio)
+    return tasa_gravedad(
+        filtrados, columna, f"Gravedad según: {factor} ({sufijo})", factor,
+        nombres=nombres, ordenar_por_tasa=ordenar_por_tasa,
     )
 
 
