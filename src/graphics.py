@@ -27,19 +27,33 @@ DIAS = {
 }
 
 
+# Color principal de los gráficos (el mismo azul que la cabecera de la web)
+COLOR = "#1f4e79"
+
+
+def estilo(fig: go.Figure) -> go.Figure:
+    """Aplica el mismo aspecto a todos los gráficos: fondo blanco, letra y márgenes."""
+    fig.update_layout(
+        template="plotly_white",
+        font={"family": "Segoe UI, Arial, sans-serif", "color": "#2b2b2b"},
+        margin={"l": 50, "r": 20, "t": 60, "b": 50},
+        title_font_size=16,
+    )
+    return fig
+
+
 def figura_vacia(titulo: str) -> go.Figure:
     """Figura con un mensaje, para cuando los filtros no dejan ningún dato."""
     fig = go.Figure()
     fig.update_layout(
         title=titulo,
-        template="plotly_white",
         annotations=[{
             "text": "Sin datos con estos filtros",
             "showarrow": False,
             "font": {"size": 16},
         }],
     )
-    return fig
+    return estilo(fig)
 
 
 def un_registro_por_accidente(df: pd.DataFrame) -> pd.DataFrame:
@@ -60,8 +74,8 @@ def accidentes_por_mes(df: pd.DataFrame, titulo: str) -> go.Figure:
         conteo, x="mes_nombre", y="accidentes", title=titulo,
         labels={"mes_nombre": "Mes", "accidentes": "Número de accidentes"},
     )
-    fig.update_layout(template="plotly_white")
-    return fig
+    fig.update_traces(marker_color=COLOR)
+    return estilo(fig)
 
 
 def accidentes_por_dia_semana(df: pd.DataFrame, titulo: str) -> go.Figure:
@@ -77,8 +91,8 @@ def accidentes_por_dia_semana(df: pd.DataFrame, titulo: str) -> go.Figure:
         conteo, x="dia_nombre", y="accidentes", title=titulo,
         labels={"dia_nombre": "Día de la semana", "accidentes": "Número de accidentes"},
     )
-    fig.update_layout(template="plotly_white")
-    return fig
+    fig.update_traces(marker_color=COLOR)
+    return estilo(fig)
 
 
 def accidentes_por_hora(df: pd.DataFrame, titulo: str) -> go.Figure:
@@ -93,8 +107,8 @@ def accidentes_por_hora(df: pd.DataFrame, titulo: str) -> go.Figure:
         conteo, x="hora_num", y="accidentes", markers=True, title=titulo,
         labels={"hora_num": "Hora del día", "accidentes": "Número de accidentes"},
     )
-    fig.update_layout(template="plotly_white")
-    return fig
+    fig.update_traces(marker_color=COLOR, line_color=COLOR)
+    return estilo(fig)
 
 
 def accidentes_por_categoria(
@@ -136,8 +150,8 @@ def _barras_horizontales(
         conteo, x="total", y=columna, orientation="h", title=titulo,
         labels={"total": eje_x, columna: etiqueta},
     )
-    fig.update_layout(template="plotly_white")
-    return fig
+    fig.update_traces(marker_color=COLOR)
+    return estilo(fig)
 
 
 def mapa_calor_dia_hora(df: pd.DataFrame, titulo: str) -> go.Figure:
@@ -157,15 +171,16 @@ def mapa_calor_dia_hora(df: pd.DataFrame, titulo: str) -> go.Figure:
             z=tabla.values,
             x=tabla.columns.tolist(),
             y=[DIAS[d] for d in tabla.index],
+            colorscale="Blues",
             colorbar={"title": "Accidentes"},
         )
     )
     fig.update_layout(
-        title=titulo, template="plotly_white",
+        title=titulo,
         xaxis_title="Hora del día", yaxis_title="Día de la semana",
         yaxis={"autorange": "reversed"},  # lunes arriba
     )
-    return fig
+    return estilo(fig)
 
 
 def tasa_gravedad(
@@ -222,24 +237,6 @@ def tasa_gravedad(
             tabla, x="categoria", y="tasa", title=titulo_completo,
             labels=etiquetas, hover_data=["personas", "graves"],
         )
-    fig.update_layout(template="plotly_white")
-    return fig
+    fig.update_traces(marker_color=COLOR)
+    return estilo(fig)
 
-
-def grafico_probabilidad(probabilidad: float, media: float) -> go.Figure:
-    """Compara la probabilidad estimada (%) con el % medio de graves de todos los datos."""
-    fig = go.Figure(
-        data=go.Bar(
-            x=["Media de todas las personas", "Persona descrita"],
-            y=[media, probabilidad],
-            text=[f"{media:.1f} %", f"{probabilidad:.1f} %"],
-            textposition="outside",
-        )
-    )
-    fig.update_layout(
-        title="Probabilidad estimada de lesión grave",
-        yaxis_title="% de probabilidad",
-        yaxis={"range": [0, max(media, probabilidad) * 1.3]},
-        template="plotly_white",
-    )
-    return fig
