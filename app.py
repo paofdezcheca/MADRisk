@@ -206,7 +206,8 @@ app.layout = html.Div(
         caja_grafico("g_lesividad", ancho="98%"),
         html.H2("Análisis de la gravedad", style={"margin": "30px 20px 0"}),
         html.P(
-            "Gravedad = persona con lesión grave (ingreso de más de 24 horas o fallecida). "
+            "Gravedad = persona con lesión grave: hospitalizada más de 24 horas o fallecida, "
+            "criterio oficial de la DGT para herido grave. "
             "El porcentaje se calcula solo con las personas cuya lesividad está informada. "
             "Pasa el ratón por una barra para ver cuántas personas hay detrás. "
             "Se ocultan los grupos con menos de 100 personas.",
