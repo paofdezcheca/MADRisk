@@ -224,3 +224,22 @@ def tasa_gravedad(
         )
     fig.update_layout(template="plotly_white")
     return fig
+
+
+def grafico_probabilidad(probabilidad: float, media: float) -> go.Figure:
+    """Compara la probabilidad estimada (%) con el % medio de graves de todos los datos."""
+    fig = go.Figure(
+        data=go.Bar(
+            x=["Media de todas las personas", "Persona descrita"],
+            y=[media, probabilidad],
+            text=[f"{media:.1f} %", f"{probabilidad:.1f} %"],
+            textposition="outside",
+        )
+    )
+    fig.update_layout(
+        title="Probabilidad estimada de lesión grave",
+        yaxis_title="% de probabilidad",
+        yaxis={"range": [0, max(media, probabilidad) * 1.3]},
+        template="plotly_white",
+    )
+    return fig
