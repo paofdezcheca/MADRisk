@@ -74,6 +74,12 @@ ESTILO_BOTON = {
     "fontWeight": "600",
     "cursor": "pointer",
 }
+ESTILO_BOTON_SECUNDARIO = {
+    **ESTILO_BOTON,
+    "backgroundColor": "white",
+    "color": AZUL,
+    "border": f"2px solid {AZUL}",
+}
 
 
 def formato_miles(numero):
@@ -110,6 +116,46 @@ CAMPOS = {
     "estado_meteorologico": ("Meteorología", "", None),
 }
 ORDEN_FORMULARIO = list(CAMPOS)
+
+# Valores con los que arranca cada desplegable (los más habituales en los datos)
+VALORES_POR_DEFECTO = {variable: valor_mas_frecuente(variable) for variable in ORDEN_FORMULARIO
+                       if variable not in ("hora_num", "dia_semana")}
+VALORES_POR_DEFECTO.update({"hora_num": 12, "dia_semana": 0})
+
+# Ejemplos para probar la herramienta con un clic: cada uno es una pareja (aviso A, aviso B)
+# con orden de gravedad muy distinto. Cada pulsación del botón pasa al siguiente.
+EJEMPLOS = [
+    (  # Una persona mayor atropellada de noche frente a un choque lateral de día
+        {"tipo_persona": "Peatón", "tipo_vehiculo": "Turismo",
+         "tipo_accidente": "Atropello a persona", "rango_edad": "Más de 74 años",
+         "distrito": "CENTRO", "hora_num": 22, "dia_semana": 4,
+         "estado_meteorologico": "Lluvia débil"},
+        {"tipo_persona": "Conductor", "tipo_vehiculo": "Turismo",
+         "tipo_accidente": "Colisión lateral", "rango_edad": "De 30 a 34 años",
+         "distrito": "SALAMANCA", "hora_num": 9, "dia_semana": 1,
+         "estado_meteorologico": "Despejado"},
+    ),
+    (  # Una caída en moto grande de madrugada frente a un alcance con pasajero
+        {"tipo_persona": "Conductor", "tipo_vehiculo": "Motocicleta > 125cc",
+         "tipo_accidente": "Caída", "rango_edad": "De 25 a 29 años",
+         "distrito": "FUENCARRAL-EL PARDO", "hora_num": 3, "dia_semana": 5,
+         "estado_meteorologico": "Despejado"},
+        {"tipo_persona": "Pasajero", "tipo_vehiculo": "Turismo",
+         "tipo_accidente": "Alcance", "rango_edad": "De 40 a 44 años",
+         "distrito": "CHAMBERÍ", "hora_num": 8, "dia_semana": 2,
+         "estado_meteorologico": "Nublado"},
+    ),
+    (  # Dos casos parecidos: la herramienta debe decir que decide el operador
+        {"tipo_persona": "Conductor", "tipo_vehiculo": "Turismo",
+         "tipo_accidente": "Alcance", "rango_edad": "De 35 a 39 años",
+         "distrito": "LATINA", "hora_num": 18, "dia_semana": 3,
+         "estado_meteorologico": "Despejado"},
+        {"tipo_persona": "Conductor", "tipo_vehiculo": "Turismo",
+         "tipo_accidente": "Alcance", "rango_edad": "De 40 a 44 años",
+         "distrito": "CARABANCHEL", "hora_num": 17, "dia_semana": 3,
+         "estado_meteorologico": "Despejado"},
+    ),
+]
 
 
 def tarjeta_aviso(letra):
@@ -390,9 +436,14 @@ app.layout = html.Div(
                 ),
                 html.Div(children=[tarjeta_aviso("A"), tarjeta_aviso("B")], style=ESTILO_FILA),
                 html.Div(
-                    children=[html.Button("Comparar avisos", id="boton_comparar",
-                                          n_clicks=0, style=ESTILO_BOTON)],
-                    style={"textAlign": "center", "margin": "24px 0"},
+                    children=[
+                        html.Button("Cargar un ejemplo", id="boton_ejemplo",
+                                    n_clicks=0, style=ESTILO_BOTON_SECUNDARIO),
+                        html.Button("Comparar avisos", id="boton_comparar",
+                                    n_clicks=0, style=ESTILO_BOTON),
+                    ],
+                    style={"textAlign": "center", "margin": "24px 0", "display": "flex",
+                           "gap": "12px", "justifyContent": "center", "flexWrap": "wrap"},
                 ),
                 # Resultado (se rellena en el callback)
                 html.Div(id="resultado"),
@@ -499,6 +550,20 @@ app.layout = html.Div(
         ),
     ],
 )
+
+
+@app.callback(
+    *[Output(f"{letra}_{variable}", "value")
+      for letra in ("A", "B") for variable in ORDEN_FORMULARIO],
+    Input("boton_ejemplo", "n_clicks"),
+)
+def cargar_ejemplo(n_clicks):
+    """Rellena los dos avisos con el siguiente ejemplo (sin pulsar nada, los valores habituales)."""
+    if n_clicks == 0:
+        aviso_a = aviso_b = VALORES_POR_DEFECTO
+    else:
+        aviso_a, aviso_b = EJEMPLOS[(n_clicks - 1) % len(EJEMPLOS)]
+    return [aviso_a[v] for v in ORDEN_FORMULARIO] + [aviso_b[v] for v in ORDEN_FORMULARIO]
 
 
 @app.callback(
