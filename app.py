@@ -190,7 +190,50 @@ def tarjeta_aviso(letra):
     )
 
 
-def tarjeta_resultado(letra, probabilidad, borde):
+# % histórico de personas graves para cada valor de las variables que más pesan.
+# Se calcula una sola vez al arrancar, solo con las personas de lesividad informada.
+FACTORES_EXPLICACION = [
+    ("tipo_persona", "Persona"),
+    ("tipo_vehiculo", "Vehículo"),
+    ("tipo_accidente", "Accidente"),
+    ("rango_edad", "Edad"),
+]
+MINIMO_PERSONAS = 100  # con menos personas, el porcentaje no es fiable y no se muestra
+informados = datos[datos["grave"].notna()]
+TASAS_HISTORICAS = {
+    columna: informados.groupby(columna)["grave"].agg(["mean", "count"])
+    for columna, _ in FACTORES_EXPLICACION
+}
+
+
+def explicar_aviso(aviso):
+    """Líneas del bloque «Por qué»: cuántas veces la media graves hay en cada factor elegido."""
+    lineas = []
+    for columna, etiqueta in FACTORES_EXPLICACION:
+        tabla = TASAS_HISTORICAS[columna]
+        valor = aviso[columna]
+        if valor not in tabla.index or tabla.loc[valor, "count"] < MINIMO_PERSONAS:
+            continue
+        tasa = tabla.loc[valor, "mean"] * 100
+        veces = tasa / media_graves
+        # Rojo si el factor eleva mucho el riesgo, verde si lo reduce, gris si es parecido
+        color = "#c0392b" if veces >= 1.5 else "#2e8b57" if veces <= 0.67 else "#6b7280"
+        lineas.append(
+            html.Div(
+                children=[
+                    html.Span(f"{etiqueta}: {valor}"),
+                    html.Span(f"{un_decimal(tasa)} % graves (x{un_decimal(veces)})",
+                              style={"color": color, "fontWeight": "600"}),
+                ],
+                style={"display": "flex", "justifyContent": "space-between", "gap": "12px",
+                       "padding": "4px 0", "borderBottom": "1px solid #eef0f3",
+                       "fontSize": "13px", "textAlign": "left"},
+            )
+        )
+    return lineas
+
+
+def tarjeta_resultado(letra, probabilidad, borde, aviso):
     """Resultado de un aviso: probabilidad, nivel de prioridad y qué significa."""
     nivel = nivel_prioridad(probabilidad)
     color = COLOR_NIVEL[nivel]
@@ -215,6 +258,9 @@ def tarjeta_resultado(letra, probabilidad, borde):
                 f"{un_decimal(media_graves)} %).",
                 style={"fontSize": "14px", "marginTop": "14px"},
             ),
+            html.P("Por qué: % histórico de personas graves en cada característica",
+                   style={**ESTILO_AYUDA, "marginTop": "16px", "textAlign": "left"}),
+            *explicar_aviso(aviso),
         ],
         style={**ESTILO_TARJETA, "flex": "1 1 300px", "margin": "0",
                "borderTop": f"6px solid {borde}", "textAlign": "center"},
@@ -611,8 +657,8 @@ def comparar(n_clicks, *valores):
                    "fontWeight": "700", "marginBottom": "16px"},
         ),
         html.Div(
-            children=[tarjeta_resultado("A", prob_a, borde_a),
-                      tarjeta_resultado("B", prob_b, borde_b)],
+            children=[tarjeta_resultado("A", prob_a, borde_a, aviso_a),
+                      tarjeta_resultado("B", prob_b, borde_b, aviso_b)],
             style=ESTILO_FILA,
         ),
         html.Div(
