@@ -22,6 +22,7 @@ from src.graphics import (
     accidentes_por_hora,
     accidentes_por_mes,
     comparacion_probabilidades,
+    grupo_mas_grave,
     mapa_calor_dia_hora,
     personas_por_categoria,
     tasa_gravedad,
@@ -210,6 +211,10 @@ def explicar_aviso(aviso):
     """Líneas del bloque «Por qué»: cuántas veces la media graves hay en cada factor elegido."""
     lineas = []
     for columna, etiqueta in FACTORES_EXPLICACION:
+        # Si es un peatón, el vehículo es el que lo atropelló: su tasa (la de sus ocupantes)
+        # no explicaría el riesgo del peatón y confundiría
+        if columna == "tipo_vehiculo" and aviso["tipo_persona"].startswith("Peatón"):
+            continue
         tabla = TASAS_HISTORICAS[columna]
         valor = aviso[columna]
         if valor not in tabla.index or tabla.loc[valor, "count"] < MINIMO_PERSONAS:
@@ -567,6 +572,33 @@ app.layout = html.Div(
                     children=[
                         html.Div(
                             children=[
+                                html.H2("Qué factores se asocian a la gravedad",
+                                        style={"marginTop": "0", "color": AZUL}),
+                                html.P(
+                                    "Gravedad = persona con lesión grave: hospitalizada más de "
+                                    "24 horas o fallecida, criterio oficial de la DGT para "
+                                    "herido grave. El porcentaje se calcula solo con las "
+                                    "personas cuya lesividad está informada. Pasa el ratón por "
+                                    "una barra para ver cuántas personas hay detrás. Se ocultan "
+                                    "los grupos con menos de 100 personas."
+                                ),
+                                html.Div(
+                                    children=[
+                                        caja_desplegable("Factor", "g_factor", opciones_factor,
+                                                         ancho="260px", valor="Tipo de persona"),
+                                        caja_desplegable("Año", "g_anio", crear_opciones("anio")),
+                                    ],
+                                    style=ESTILO_FILA,
+                                ),
+                                html.P(id="g_conclusion",
+                                       style={"fontWeight": "600", "color": AZUL,
+                                              "fontSize": "16px", "margin": "12px 0 0"}),
+                                dcc.Graph(id="g_gravedad"),
+                            ],
+                            style=ESTILO_TARJETA,
+                        ),
+                        html.Div(
+                            children=[
                                 html.H2("Exploración de los accidentes",
                                         style={"marginTop": "0", "color": AZUL}),
                                 html.P(
@@ -589,30 +621,6 @@ app.layout = html.Div(
                                     ],
                                     style=ESTILO_FILA,
                                 ),
-                            ],
-                            style=ESTILO_TARJETA,
-                        ),
-                        html.Div(
-                            children=[
-                                html.H2("Qué factores se asocian a la gravedad",
-                                        style={"marginTop": "0", "color": AZUL}),
-                                html.P(
-                                    "Gravedad = persona con lesión grave: hospitalizada más de "
-                                    "24 horas o fallecida, criterio oficial de la DGT para "
-                                    "herido grave. El porcentaje se calcula solo con las "
-                                    "personas cuya lesividad está informada. Pasa el ratón por "
-                                    "una barra para ver cuántas personas hay detrás. Se ocultan "
-                                    "los grupos con menos de 100 personas."
-                                ),
-                                html.Div(
-                                    children=[
-                                        caja_desplegable("Factor", "g_factor", opciones_factor,
-                                                         ancho="260px", valor="Tipo de persona"),
-                                        caja_desplegable("Año", "g_anio", crear_opciones("anio")),
-                                    ],
-                                    style=ESTILO_FILA,
-                                ),
-                                dcc.Graph(id="g_gravedad"),
                             ],
                             style=ESTILO_TARJETA,
                         ),
@@ -785,6 +793,7 @@ def actualizar(*valores):
 
 @app.callback(
     Output("g_gravedad", "figure"),
+    Output("g_conclusion", "children"),
     Input("g_factor", "value"),
     Input("g_anio", "value"),
 )
@@ -797,10 +806,22 @@ def actualizar_gravedad(factor, anio):
     else:
         filtrados = datos[datos["anio"] == anio]
         sufijo = str(anio)
-    return tasa_gravedad(
+    figura = tasa_gravedad(
         filtrados, columna, f"Gravedad según: {factor} ({sufijo})", factor,
         nombres=nombres, ordenar_por_tasa=ordenar_por_tasa,
     )
+
+    # Frase con el grupo de mayor riesgo, para no obligar a leer el gráfico
+    mayor = grupo_mas_grave(filtrados, columna)
+    if mayor is None:
+        return figura, ""
+    nombre = nombres[mayor["valor"]] if nombres else mayor["valor"]
+    conclusion = (
+        f"Mayor riesgo: {nombre}, con un {un_decimal(mayor['tasa'])} % de personas graves "
+        f"({un_decimal(mayor['veces'])} veces la media; {formato_miles(mayor['personas'])} "
+        "personas)."
+    )
+    return figura, conclusion
 
 
 if __name__ == "__main__":
