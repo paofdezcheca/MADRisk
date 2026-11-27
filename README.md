@@ -44,7 +44,7 @@ Se analizan factores como el momento y la localización del accidente, el tipo d
 
 ### 3. Predicción de la gravedad
 
-La web está pensada como ayuda para los servicios de emergencia: **compara dos avisos de accidente y propone atender primero el de mayor probabilidad de lesión grave**. Un modelo de clasificación supervisada (Random Forest) estima esa probabilidad para una persona implicada en un accidente que ya ha ocurrido, usando solo datos que se conocen al recibir el aviso: tipo de persona, vehículo, tipo de accidente, edad, distrito, hora, día y meteorología. Según la probabilidad se asigna una prioridad alta (≥ 8 %), media (3-8 %) o baja (< 3 %). En los datos de prueba, el 16,1 % de las personas con prioridad alta sufrió una lesión grave, frente al 5,6 % en la media y el 0,5 % en la baja.
+La web está pensada como ayuda para los servicios de emergencia: **compara dos avisos de accidente y propone atender primero el de mayor probabilidad de lesión grave**. Un modelo de clasificación supervisada (Random Forest) estima esa probabilidad para una persona implicada en un accidente que ya ha ocurrido, usando solo datos que se conocen al recibir el aviso: tipo de persona, vehículo, tipo de accidente, edad, distrito, hora, día y meteorología. Cada aviso se muestra con la probabilidad, un bloque «Por qué» con el porcentaje histórico de graves de cada característica elegida y un gráfico que lo compara con la media; el botón «Cargar un ejemplo» rellena dos avisos reales contrastados para probarlo con un clic. Según la probabilidad se asigna una prioridad alta (≥ 8 %), media (3-8 %) o baja (< 3 %). En los datos de prueba, el 16,1 % de las personas con prioridad alta sufrió una lesión grave, frente al 5,6 % en la media y el 0,5 % en la baja.
 
 El objetivo no es predecir la probabilidad de que ocurra un accidente, sino estimar su gravedad **una vez ocurrido**.
 
@@ -103,11 +103,12 @@ Después, abre http://127.0.0.1:8050 en el navegador.
 
 ### Tests
 
-Comprueban el ETL y el modelo con datos inventados (no hace falta instalar nada más):
+Comprueban el ETL, el modelo y los gráficos con datos inventados (no hace falta instalar nada más):
 
 ```bash
 python tests/test_etl.py
 python tests/test_model.py
+python tests/test_graphics.py
 ```
 
 ## Estructura del proyecto
@@ -117,7 +118,7 @@ python tests/test_model.py
 - `src/graphics.py`: funciones que reciben datos y devuelven figuras de Plotly.
 - `src/model.py`: codificación, entrenamiento, evaluación y predicción.
 - `train.py`: entrena el modelo y guarda `model.joblib` (`python train.py`).
-- `tests/`: pruebas del ETL y del modelo.
+- `tests/`: pruebas del ETL, del modelo y de los gráficos.
 - `app.py`: layout y callbacks de Dash; solo carga el modelo, nunca lo entrena.
 - `model.joblib`: Random Forest entrenado (50 árboles, profundidad 8, ~1,4 MB).
 - `assets/carrusel/`: fotos del carrusel de la cabecera.
