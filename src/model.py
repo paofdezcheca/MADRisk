@@ -123,7 +123,8 @@ def evaluar_umbrales(modelo, X_test, y_test, umbrales) -> None:
     for umbral in umbrales:
         marcados = probabilidades >= umbral
         aciertos = int((marcados & (y_test == 1)).sum())
-        recall = aciertos / graves
+        # max(..., 1) evita dividir entre cero si en los datos de prueba no hubiera graves
+        recall = aciertos / max(graves, 1)
         precision = aciertos / max(int(marcados.sum()), 1)
         f1 = 2 * precision * recall / max(precision + recall, 1e-9)
         print(
