@@ -373,6 +373,35 @@ for nivel in ["Alta", "Media", "Baja"]:
         )
     )
 
+
+
+def tarjeta_dato(valor, texto, color=AZUL):
+    """Cifra grande con una explicación debajo (la franja de datos clave de la cabecera)."""
+    return html.Div(
+        children=[
+            html.P(valor, style={"margin": "0", "fontSize": "30px", "fontWeight": "700",
+                                 "color": color}),
+            html.P(texto, style={"margin": "4px 0 0", "fontSize": "13px", "color": "#6b7280"}),
+        ],
+        style={**ESTILO_TARJETA, "flex": "1 1 200px", "margin": "0", "textAlign": "center",
+               "padding": "16px", "borderTop": f"4px solid {color}"},
+    )
+
+
+# Datos clave: lo que dice el modelo sobre los niveles, con los datos de prueba
+n_accidentes = datos["num_expediente"].nunique()
+veces_alta = niveles["Alta"]["tasa_grave"] / media_graves
+datos_clave = [
+    tarjeta_dato(formato_miles(len(datos)),
+                 f"personas implicadas en {formato_miles(n_accidentes)} accidentes (2020-2025)"),
+    tarjeta_dato(f"{un_decimal(media_graves)} %", "de las personas sufre una lesión grave"),
+    tarjeta_dato(f"{un_decimal(niveles['Alta']['tasa_grave'])} %",
+                 f"de graves con prioridad ALTA: {un_decimal(veces_alta)} veces la media",
+                 COLOR_NIVEL["Alta"]),
+    tarjeta_dato(f"{un_decimal(niveles['Baja']['tasa_grave'])} %",
+                 "de graves con prioridad BAJA", COLOR_NIVEL["Baja"]),
+]
+
 app = Dash(__name__)
 server = app.server  # obligatorio para gunicorn (Render)
 
@@ -451,6 +480,8 @@ app.layout = html.Div(
         html.Div(
             style=ESTILO_CONTENIDO,
             children=[
+                # Datos clave
+                html.Div(children=datos_clave, style={**ESTILO_FILA, "margin": "-18px 0 16px"}),
                 # Qué predice, exactamente
                 html.Div(
                     children=[
