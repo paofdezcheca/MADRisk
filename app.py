@@ -21,6 +21,7 @@ from src.graphics import (
     accidentes_por_dia_semana,
     accidentes_por_hora,
     accidentes_por_mes,
+    comparacion_probabilidades,
     mapa_calor_dia_hora,
     personas_por_categoria,
     tasa_gravedad,
@@ -613,6 +614,16 @@ def comparar(n_clicks, *valores):
             children=[tarjeta_resultado("A", prob_a, borde_a),
                       tarjeta_resultado("B", prob_b, borde_b)],
             style=ESTILO_FILA,
+        ),
+        html.Div(
+            children=[dcc.Graph(
+                figure=comparacion_probabilidades(
+                    prob_a, prob_b, media_graves,
+                    COLOR_NIVEL[nivel_prioridad(prob_a)], COLOR_NIVEL[nivel_prioridad(prob_b)],
+                ),
+                config={"displayModeBar": False},
+            )],
+            style={**ESTILO_TARJETA, "marginTop": "16px"},
         ),
     ]
 

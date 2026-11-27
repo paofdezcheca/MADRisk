@@ -215,6 +215,33 @@ def mapa_calor_dia_hora(df: pd.DataFrame, titulo: str) -> go.Figure:
     return estilo(fig)
 
 
+def comparacion_probabilidades(
+    prob_a: float, prob_b: float, media: float, color_a: str, color_b: str
+) -> go.Figure:
+    """Barras horizontales con la probabilidad (en %) de los dos avisos y la media general.
+
+    `prob_a` y `prob_b` van de 0 a 1; `media` ya está en %. Los colores de A y B son los
+    de su nivel de prioridad, para que el gráfico se lea igual que las tarjetas.
+    """
+    valores = [prob_a * 100, prob_b * 100, media]
+    nombres = ["Accidente A", "Accidente B", "Media general"]
+    fig = go.Figure(
+        data=go.Bar(
+            x=valores, y=nombres, orientation="h",
+            marker_color=[color_a, color_b, "#9aa5b1"],
+            text=[f"{v:.1f} %".replace(".", ",") for v in valores],
+            textposition="outside", cliponaxis=False,
+        )
+    )
+    fig.update_layout(
+        title="Probabilidad de lesión grave de cada aviso frente a la media",
+        xaxis_title="Probabilidad de lesión grave (%)",
+        yaxis={"autorange": "reversed"},  # A arriba, la media abajo
+        height=260,
+    )
+    return estilo(fig)
+
+
 def tasa_gravedad(
     df: pd.DataFrame,
     columna: str,
