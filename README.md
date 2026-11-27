@@ -32,7 +32,7 @@ MADRisk se estructura en tres áreas principales:
 
 El usuario puede analizar los accidentes mediante diferentes filtros, como año, mes, día de la semana, hora, distrito, tipo de accidente, tipo de vehículo, condiciones meteorológicas o nivel de lesividad.
 
-Los resultados se muestran mediante indicadores y gráficos interactivos (barras, líneas y mapas de calor) que permiten identificar patrones temporales y por distrito. Cada gráfico indica si cuenta **accidentes** o **personas**: cada fila de los datos es una persona implicada y un mismo accidente puede implicar a varias.
+Los resultados se muestran mediante indicadores y gráficos interactivos (barras, líneas y mapas de calor) que permiten identificar patrones temporales y por distrito. Esta sección está plegada al abrir la web (son nueve gráficos) y se despliega con un botón. Cada gráfico indica si cuenta **accidentes** o **personas**: cada fila de los datos es una persona implicada y un mismo accidente puede implicar a varias.
 
 ### 2. Análisis de los factores asociados a la gravedad
 
