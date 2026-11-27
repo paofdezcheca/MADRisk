@@ -55,11 +55,14 @@ ESTILO_PAGINA = {
     "color": "#2b2b2b",
     "minHeight": "100vh",
 }
-ESTILO_CONTENIDO = {"maxWidth": "1100px", "margin": "0 auto", "padding": "0 16px 40px"}
+# clamp(mínimo, ideal, máximo): los márgenes se encogen en pantallas pequeñas (móvil)
+MARGEN_LATERAL = "clamp(8px, 2.5vw, 16px)"
+ESTILO_CONTENIDO = {"maxWidth": "1100px", "margin": "0 auto",
+                    "padding": f"0 {MARGEN_LATERAL} 40px"}
 ESTILO_TARJETA = {
     "backgroundColor": "white",
     "borderRadius": "12px",
-    "padding": "20px 24px",
+    "padding": "20px clamp(14px, 4vw, 24px)",
     "margin": "16px 0",
     "boxShadow": "0 2px 8px rgba(0,0,0,0.08)",
 }
@@ -332,13 +335,16 @@ opciones_factor = [{"label": etiqueta, "value": etiqueta} for etiqueta in FACTOR
 
 
 def caja_desplegable(etiqueta, id_desplegable, opciones, ancho="200px", valor=TODOS):
-    """Desplegable con su etiqueta encima, para los filtros del análisis."""
+    """Desplegable con su etiqueta encima, para los filtros del análisis.
+
+    `ancho` es el máximo: en pantallas estrechas se encoge y caben dos por fila.
+    """
     return html.Div(
         children=[
             html.P(etiqueta, style={**ESTILO_ETIQUETA, "margin": "0 0 4px"}),
             dcc.Dropdown(options=opciones, value=valor, id=id_desplegable),
         ],
-        style={"width": ancho},
+        style={"flex": "1 1 140px", "maxWidth": ancho},
     )
 
 
@@ -346,7 +352,8 @@ def caja_grafico(id_grafico, ancho="48%"):
     """Contenedor con un gráfico; dos por fila si el ancho es 48%."""
     return html.Div(
         children=[dcc.Graph(id=id_grafico)],
-        style={"flex": f"1 1 {ancho}", "minWidth": "320px"},
+        # min(): nunca más ancho que la pantalla, así no aparece scroll horizontal en móvil
+        style={"flex": f"1 1 {ancho}", "minWidth": "min(320px, 100%)"},
     )
 
 
@@ -370,11 +377,13 @@ for nivel in ["Alta", "Media", "Baja"]:
                 ),
                 html.Span(
                     f"{un_decimal(niveles[nivel]['tasa_grave'])} % de lesiones graves "
-                    f"({formato_miles(niveles[nivel]['personas'])} personas de prueba)"
+                    f"({formato_miles(niveles[nivel]['personas'])} personas de prueba)",
+                    style={"flex": "1 1 200px"},
                 ),
             ],
-            style={"display": "flex", "gap": "14px", "alignItems": "center",
-                   "margin": "6px 0"},
+            # flexWrap: en pantallas estrechas la etiqueta queda encima del texto
+            style={"display": "flex", "flexWrap": "wrap", "gap": "6px 14px",
+                   "alignItems": "center", "margin": "10px 0"},
         )
     )
 
@@ -384,12 +393,14 @@ def tarjeta_dato(valor, texto, color=AZUL):
     """Cifra grande con una explicación debajo (la franja de datos clave de la cabecera)."""
     return html.Div(
         children=[
-            html.P(valor, style={"margin": "0", "fontSize": "30px", "fontWeight": "700",
+            html.P(valor, style={"margin": "0", "fontSize": "clamp(24px, 6vw, 30px)",
+                                 "fontWeight": "700",
                                  "color": color}),
             html.P(texto, style={"margin": "4px 0 0", "fontSize": "13px", "color": "#6b7280"}),
         ],
-        style={**ESTILO_TARJETA, "flex": "1 1 200px", "margin": "0", "textAlign": "center",
-               "padding": "16px", "borderTop": f"4px solid {color}"},
+        # Basis pequeña: en móvil caben dos cifras por fila (2 x 2) en vez de cuatro apiladas
+        style={**ESTILO_TARJETA, "flex": "1 1 140px", "margin": "0", "textAlign": "center",
+               "padding": "14px 8px", "borderTop": f"4px solid {color}"},
     )
 
 
@@ -415,7 +426,7 @@ server = app.server  # obligatorio para gunicorn (Render)
 # que Dash sirve solo). Autor: Diario de Madrid, licencia CC BY 4.0, vía Wikimedia Commons.
 FOTOS = [f"carrusel/foto{i}.jpg" for i in range(1, 6)]
 SEGUNDOS_POR_FOTO = 5
-ALTO_CARRUSEL = "300px"
+ALTO_CARRUSEL = "clamp(180px, 35vw, 300px)"  # más bajo en móvil
 
 # Para que el carrusel avance siempre hacia la derecha y pueda "dar la vuelta" sin que
 # se note, la tira repite la secuencia de fotos varias veces. Solo al final de la tira
@@ -692,7 +703,8 @@ def comparar(n_clicks, *valores):
         html.Div(
             titulo,
             style={"backgroundColor": color, "color": "white", "borderRadius": "12px",
-                   "padding": "18px", "textAlign": "center", "fontSize": "26px",
+                   "padding": "18px", "textAlign": "center",
+                   "fontSize": "clamp(18px, 5vw, 26px)",
                    "fontWeight": "700", "marginBottom": "16px"},
         ),
         html.Div(
