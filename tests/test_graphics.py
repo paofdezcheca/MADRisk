@@ -14,6 +14,7 @@ from src.graphics import (
     comparacion_probabilidades,
     grupo_mas_grave,
     mapa_calor_dia_hora,
+    partir_titulo,
     tasa_gravedad,
 )
 
@@ -83,6 +84,17 @@ def test_grupo_mas_grave_elige_la_tasa_mayor_y_respeta_el_minimo():
     assert round(mayor["veces"], 1) == 1.5
     # Con un mínimo que ningún grupo alcanza no hay conclusión
     assert grupo_mas_grave(df, "distrito", minimo=5) is None
+
+
+def test_titulos_largos_se_parten_en_lineas():
+    corto, n_corto = partir_titulo("Accidentes por mes")
+    assert corto == "Accidentes por mes" and n_corto == 1
+    largo, n_largo = partir_titulo("Probabilidad de lesión grave de cada aviso frente a la media")
+    assert n_largo == 2 and largo.count("<br>") == 1
+    # Los gráficos reales usan el título partido y dejan más margen arriba
+    fig = comparacion_probabilidades(0.1, 0.2, 2.2, "#c0392b", "#2e8b57")
+    assert "<br>" in fig.layout.title.text
+    assert fig.layout.margin.t > 54
 
 
 if __name__ == "__main__":

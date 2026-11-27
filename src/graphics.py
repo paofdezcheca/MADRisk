@@ -12,6 +12,8 @@ Cada título indica qué se está contando.
 
 from __future__ import annotations
 
+import textwrap
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -60,14 +62,35 @@ def colores_por_valor(valores: list, escala: list) -> list:
     return colores
 
 
+# Caracteres por línea del título: así cabe en una pantalla de móvil sin cortarse
+ANCHO_TITULO = 38
+
+
+def partir_titulo(texto: str, ancho: int = ANCHO_TITULO) -> tuple[str, int]:
+    """Parte un título largo en líneas con <br> y devuelve (texto, número de líneas)."""
+    lineas = textwrap.wrap(texto, ancho) or [texto]
+    return "<br>".join(lineas), len(lineas)
+
+
 def estilo(fig: go.Figure) -> go.Figure:
-    """Aplica el mismo aspecto a todos los gráficos: fondo blanco, letra y márgenes."""
+    """Aplica el mismo aspecto a todos los gráficos: fondo blanco, letra y márgenes.
+
+    Los títulos largos se parten en varias líneas y los márgenes de los ejes se ajustan
+    solos (automargin), para que los gráficos se lean bien también en pantallas pequeñas.
+    """
+    titulo = fig.layout.title.text
+    lineas = 1
+    if titulo:
+        texto, lineas = partir_titulo(titulo)
+        fig.update_layout(title_text=texto)
     fig.update_layout(
         template="plotly_white",
         font={"family": "Segoe UI, Arial, sans-serif", "color": "#2b2b2b"},
-        margin={"l": 50, "r": 20, "t": 60, "b": 50},
-        title_font_size=16,
+        margin={"l": 20, "r": 30, "t": 30 + 24 * lineas, "b": 40},
+        title_font_size=15,
     )
+    fig.update_xaxes(automargin=True)
+    fig.update_yaxes(automargin=True)
     return fig
 
 
@@ -183,6 +206,9 @@ def _barras_horizontales(
         labels={"total": eje_x, columna: etiqueta},
     )
     fig.update_traces(marker_color=colores_por_valor(conteo["total"].tolist(), ESCALA_AZULES))
+    # Sin título en el eje vertical: ya lo dice el título del gráfico y así las barras
+    # ganan ancho en pantallas pequeñas
+    fig.update_yaxes(title=None)
     return estilo(fig)
 
 
@@ -236,6 +262,8 @@ def comparacion_probabilidades(
     fig.update_layout(
         title="Probabilidad de lesión grave de cada aviso frente a la media",
         xaxis_title="Probabilidad de lesión grave (%)",
+        # Margen a la derecha para que quepa el texto de la barra más larga
+        xaxis_range=[0, max(valores) * 1.3],
         yaxis={"autorange": "reversed"},  # A arriba, la media abajo
         height=260,
     )
@@ -315,6 +343,7 @@ def tasa_gravedad(
             tabla, x="tasa", y="categoria", orientation="h", title=titulo_completo,
             labels=etiquetas, hover_data=["personas", "graves"],
         )
+        fig.update_yaxes(title=None)  # mismo motivo que en _barras_horizontales
     else:
         fig = px.bar(
             tabla, x="categoria", y="tasa", title=titulo_completo,
