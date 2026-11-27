@@ -616,24 +616,47 @@ app.layout = html.Div(
                                 html.H2("Exploración de los accidentes",
                                         style={"marginTop": "0", "color": AZUL}),
                                 html.P(
-                                    "Cada gráfico indica si cuenta accidentes o personas: cada "
-                                    "fila de los datos es una persona implicada y un mismo "
-                                    "accidente puede implicar a varias. Los filtros de vehículo "
-                                    "y lesividad se aplican a las personas. Una lesividad vacía "
-                                    "se muestra como \"No informada\" (no significa sin lesión)."
+                                    "Nueve gráficos con filtros para ver cuándo, dónde y cómo "
+                                    "ocurren los accidentes."
                                 ),
-                                html.Div(children=filtros_exploracion,
-                                         style={**ESTILO_FILA, "gap": "12px"}),
-                                html.H3(id="resumen", style={"color": AZUL}),
                                 html.Div(
+                                    children=[html.Button(
+                                        "Ver la exploración", id="boton_exploracion",
+                                        n_clicks=0, style=ESTILO_BOTON_SECUNDARIO,
+                                    )],
+                                    style={"textAlign": "center"},
+                                ),
+                                # Plegado al abrir: son muchos gráficos y alargan mucho la
+                                # página (sobre todo en móvil)
+                                html.Div(
+                                    id="exploracion",
+                                    style={"display": "none"},
                                     children=[
-                                        caja_grafico("g_mes"), caja_grafico("g_dia"),
-                                        caja_grafico("g_hora"), caja_grafico("g_calor"),
-                                        caja_grafico("g_distrito"), caja_grafico("g_tipo_acc"),
-                                        caja_grafico("g_meteo"), caja_grafico("g_vehiculo"),
-                                        caja_grafico("g_lesividad", ancho="98%"),
+                                        html.P(
+                                            "Cada gráfico indica si cuenta accidentes o "
+                                            "personas: cada fila de los datos es una persona "
+                                            "implicada y un mismo accidente puede implicar a "
+                                            "varias. Los filtros de vehículo y lesividad se "
+                                            "aplican a las personas. Una lesividad vacía se "
+                                            "muestra como \"No informada\" (no significa sin "
+                                            "lesión)."
+                                        ),
+                                        html.Div(children=filtros_exploracion,
+                                                 style={**ESTILO_FILA, "gap": "12px"}),
+                                        html.H3(id="resumen", style={"color": AZUL}),
+                                        html.Div(
+                                            children=[
+                                                caja_grafico("g_mes"), caja_grafico("g_dia"),
+                                                caja_grafico("g_hora"), caja_grafico("g_calor"),
+                                                caja_grafico("g_distrito"),
+                                                caja_grafico("g_tipo_acc"),
+                                                caja_grafico("g_meteo"),
+                                                caja_grafico("g_vehiculo"),
+                                                caja_grafico("g_lesividad", ancho="98%"),
+                                            ],
+                                            style=ESTILO_FILA,
+                                        ),
                                     ],
-                                    style=ESTILO_FILA,
                                 ),
                             ],
                             style=ESTILO_TARJETA,
@@ -747,6 +770,18 @@ def mostrar_analisis(n_clicks):
     if n_clicks % 2 == 1:
         return {"display": "block"}, "Ocultar los datos"
     return {"display": "none"}, "Ver los datos detrás del modelo"
+
+
+@app.callback(
+    Output("exploracion", "style"),
+    Output("boton_exploracion", "children"),
+    Input("boton_exploracion", "n_clicks"),
+)
+def mostrar_exploracion(n_clicks):
+    """Muestra u oculta los gráficos de exploración cada vez que se pulsa el botón."""
+    if n_clicks % 2 == 1:
+        return {"display": "block"}, "Ocultar la exploración"
+    return {"display": "none"}, "Ver la exploración"
 
 
 @app.callback(
