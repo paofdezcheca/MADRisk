@@ -8,9 +8,9 @@
 
 **MADRisk** es una aplicación interactiva para el análisis de los accidentes de tráfico registrados en la ciudad de Madrid.
 
-A partir de los datos abiertos publicados por el Ayuntamiento de Madrid, la aplicación permitirá explorar la accidentalidad desde una perspectiva temporal, geográfica y contextual, identificando patrones relacionados con factores como la localización, la hora, el tipo de vehículo, el tipo de accidente o las condiciones meteorológicas.
+A partir de los datos abiertos publicados por el Ayuntamiento de Madrid, la aplicación permite explorar la accidentalidad desde una perspectiva temporal, geográfica y contextual, identificando patrones relacionados con factores como la localización, la hora, el tipo de vehículo, el tipo de accidente o las condiciones meteorológicas.
 
-El proyecto busca ir más allá de la visualización de estadísticas históricas. Además de permitir al usuario explorar los accidentes registrados, MADRisk analizará qué factores están asociados a una mayor lesividad y desarrollará un modelo predictivo capaz de estimar la gravedad de un accidente a partir de sus características.
+El proyecto busca ir más allá de la visualización de estadísticas históricas. Además de permitir al usuario explorar los accidentes registrados, MADRisk analiza qué factores están asociados a una mayor lesividad y incluye un modelo predictivo que estima la gravedad de un accidente a partir de sus características.
 
 ## Objetivos
 
@@ -30,7 +30,7 @@ MADRisk se estructura en tres áreas principales:
 
 ### 1. Exploración de la accidentalidad
 
-El usuario podrá analizar los accidentes mediante diferentes filtros, como año, mes, día de la semana, hora, distrito, tipo de accidente, tipo de vehículo, condiciones meteorológicas o nivel de lesividad.
+El usuario puede analizar los accidentes mediante diferentes filtros, como año, mes, día de la semana, hora, distrito, tipo de accidente, tipo de vehículo, condiciones meteorológicas o nivel de lesividad.
 
 Los resultados se muestran mediante indicadores y gráficos interactivos (barras, líneas y mapas de calor) que permiten identificar patrones temporales y por distrito. Cada gráfico indica si cuenta **accidentes** o **personas**: cada fila de los datos es una persona implicada y un mismo accidente puede implicar a varias.
 
@@ -40,7 +40,7 @@ La aplicación permite estudiar qué características y circunstancias están re
 
 Se considera **lesión grave** la de una persona hospitalizada más de 24 horas o fallecida a las 24 horas (`Ingreso superior a 24 horas` y `Fallecido 24 horas`), que es el criterio oficial de la **DGT** (Dirección General de Tráfico) para definir a un herido grave. Las personas con lesividad vacía o "Se desconoce" (alrededor del 46 % de las filas) no se cuentan como "sin lesión": quedan fuera de los porcentajes y del entrenamiento del modelo.
 
-Se analizarán factores como el momento y la localización del accidente, el tipo de vehículo, el tipo de accidente, las condiciones meteorológicas y otras variables disponibles en los datos.
+Se analizan factores como el momento y la localización del accidente, el tipo de vehículo, el tipo de accidente, las condiciones meteorológicas y otras variables disponibles en los datos.
 
 ### 3. Predicción de la gravedad
 
@@ -58,7 +58,7 @@ Resultados (sobre el 30 % de datos de prueba):
 
 Los datos utilizados proceden del **Portal de Datos Abiertos del Ayuntamiento de Madrid**.
 
-Se utilizarán los conjuntos de datos históricos de accidentes de tráfico publicados anualmente, que contienen información sobre:
+Se utilizan los conjuntos de datos históricos de accidentes de tráfico publicados anualmente, que contienen información sobre:
 
 - Fecha y hora.
 - Localización y distrito.
@@ -71,9 +71,9 @@ Se utilizarán los conjuntos de datos históricos de accidentes de tráfico publ
 - Alcohol y drogas.
 - Coordenadas geográficas (disponibles en los datos, pero la app no las usa).
 
-Los diferentes ficheros anuales serán integrados y procesados mediante Python para construir una única base de datos destinada al análisis y al desarrollo del modelo predictivo.
+Los diferentes ficheros anuales se integran y procesan mediante Python para construir una única base de datos destinada al análisis y al desarrollo del modelo predictivo.
 
-## Plan de trabajo inicial
+## Fases del proyecto
 
 ### Fase 1 — Preparación de los datos
 Recopilación e integración de los conjuntos de datos anuales. Limpieza, transformación de variables y tratamiento de valores ausentes e inconsistencias.
@@ -101,6 +101,15 @@ python app.py
 
 Después, abre http://127.0.0.1:8050 en el navegador.
 
+### Tests
+
+Comprueban el ETL y el modelo con datos inventados (no hace falta instalar nada más):
+
+```bash
+python tests/test_etl.py
+python tests/test_model.py
+```
+
 ## Estructura del proyecto
 
 - `data/raw/`: CSV anuales 2020-2025 del Ayuntamiento de Madrid.
@@ -108,6 +117,7 @@ Después, abre http://127.0.0.1:8050 en el navegador.
 - `src/graphics.py`: funciones que reciben datos y devuelven figuras de Plotly.
 - `src/model.py`: codificación, entrenamiento, evaluación y predicción.
 - `train.py`: entrena el modelo y guarda `model.joblib` (`python train.py`).
+- `tests/`: pruebas del ETL y del modelo.
 - `app.py`: layout y callbacks de Dash; solo carga el modelo, nunca lo entrena.
 - `model.joblib`: Random Forest entrenado (50 árboles, profundidad 8, ~1,4 MB).
 - `assets/carrusel/`: fotos del carrusel de la cabecera.
