@@ -12,6 +12,7 @@ from src.graphics import (
     accidentes_por_mes,
     colores_por_valor,
     comparacion_probabilidades,
+    grupo_mas_grave,
     mapa_calor_dia_hora,
     tasa_gravedad,
 )
@@ -70,6 +71,18 @@ def test_comparacion_probabilidades_pasa_a_porcentaje():
     fig = comparacion_probabilidades(0.146, 0.003, 2.2, "#c0392b", "#2e8b57")
     assert list(fig.data[0].y) == ["Accidente A", "Accidente B", "Media general"]
     assert [round(v, 1) for v in fig.data[0].x] == [14.6, 0.3, 2.2]
+
+
+def test_grupo_mas_grave_elige_la_tasa_mayor_y_respeta_el_minimo():
+    df = datos_de_prueba()
+    mayor = grupo_mas_grave(df, "distrito", minimo=1)
+    # CENTRO: 1 grave de 2 personas (50 %); la media general es 1/3
+    assert mayor["valor"] == "CENTRO"
+    assert mayor["tasa"] == 50.0
+    assert mayor["personas"] == 2
+    assert round(mayor["veces"], 1) == 1.5
+    # Con un mínimo que ningún grupo alcanza no hay conclusión
+    assert grupo_mas_grave(df, "distrito", minimo=5) is None
 
 
 if __name__ == "__main__":

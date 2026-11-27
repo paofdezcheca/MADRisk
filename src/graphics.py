@@ -242,6 +242,30 @@ def comparacion_probabilidades(
     return estilo(fig)
 
 
+def grupo_mas_grave(df: pd.DataFrame, columna: str, minimo: int = 100) -> dict | None:
+    """Valor de `columna` con mayor % de personas graves, o None si no hay datos.
+
+    Igual que en `tasa_gravedad`, solo cuentan las personas con lesividad informada y
+    se ignoran los grupos con menos de `minimo` personas. Devuelve el valor, su tasa
+    (en %), cuántas personas hay detrás y cuántas veces supera la media.
+    """
+    informados = df[df["grave"].notna()]
+    if len(informados) == 0:
+        return None
+    tabla = informados.groupby(columna)["grave"].agg(["count", "mean"]).reset_index()
+    tabla = tabla[tabla["count"] >= minimo]
+    if len(tabla) == 0:
+        return None
+    mejor = tabla.sort_values("mean", ascending=False).iloc[0]
+    media = informados["grave"].mean()
+    return {
+        "valor": mejor[columna],
+        "tasa": float(mejor["mean"] * 100),
+        "personas": int(mejor["count"]),
+        "veces": float(mejor["mean"] / media) if media > 0 else 0.0,
+    }
+
+
 def tasa_gravedad(
     df: pd.DataFrame,
     columna: str,
