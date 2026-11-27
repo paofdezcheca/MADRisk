@@ -334,17 +334,19 @@ FACTORES = {
 opciones_factor = [{"label": etiqueta, "value": etiqueta} for etiqueta in FACTORES]
 
 
-def caja_desplegable(etiqueta, id_desplegable, opciones, ancho="200px", valor=TODOS):
+def caja_desplegable(etiqueta, id_desplegable, opciones, ancho="200px", valor=TODOS,
+                     base="140px"):
     """Desplegable con su etiqueta encima, para los filtros del análisis.
 
-    `ancho` es el máximo: en pantallas estrechas se encoge y caben dos por fila.
+    `ancho` es el máximo y `base` el ancho a partir del cual pasa a la fila siguiente:
+    en pantallas estrechas se encoge y caben dos por fila.
     """
     return html.Div(
         children=[
             html.P(etiqueta, style={**ESTILO_ETIQUETA, "margin": "0 0 4px"}),
             dcc.Dropdown(options=opciones, value=valor, id=id_desplegable),
         ],
-        style={"flex": "1 1 140px", "maxWidth": ancho},
+        style={"flex": f"1 1 {base}", "maxWidth": ancho},
     )
 
 
@@ -596,7 +598,8 @@ app.layout = html.Div(
                                 html.Div(
                                     children=[
                                         caja_desplegable("Factor", "g_factor", opciones_factor,
-                                                         ancho="260px", valor="Tipo de persona"),
+                                                         ancho="260px", valor="Tipo de persona",
+                                                         base="220px"),
                                         caja_desplegable("Año", "g_anio", crear_opciones("anio")),
                                     ],
                                     style=ESTILO_FILA,
