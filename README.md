@@ -36,7 +36,7 @@ Los resultados se muestran mediante indicadores y gráficos interactivos (barras
 
 ### 2. Análisis de los factores asociados a la gravedad
 
-La aplicación permite estudiar qué características y circunstancias están relacionadas con una mayor lesividad, mostrando el porcentaje de personas con lesión grave según el factor elegido (hora, distrito, tipo de accidente, tipo de vehículo, edad, etc.).
+La aplicación permite estudiar qué características y circunstancias están relacionadas con una mayor lesividad, mostrando el porcentaje de personas con lesión grave según el factor elegido (hora, distrito, tipo de accidente, tipo de vehículo, edad, etc.). Bajo el selector, una frase resume el grupo de mayor riesgo y cuántas veces supera la media.
 
 Se considera **lesión grave** la de una persona hospitalizada más de 24 horas o fallecida a las 24 horas (`Ingreso superior a 24 horas` y `Fallecido 24 horas`), que es el criterio oficial de la **DGT** (Dirección General de Tráfico) para definir a un herido grave. Las personas con lesividad vacía o "Se desconoce" (alrededor del 46 % de las filas) no se cuentan como "sin lesión": quedan fuera de los porcentajes y del entrenamiento del modelo.
 
