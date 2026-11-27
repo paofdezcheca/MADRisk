@@ -101,6 +101,8 @@ python app.py
 
 Después, abre http://127.0.0.1:8050 en el navegador.
 
+La web se adapta a pantallas de móvil: los márgenes y los gráficos se ajustan al ancho disponible.
+
 ### Tests
 
 Comprueban el ETL, el modelo y los gráficos con datos inventados (no hace falta instalar nada más):
